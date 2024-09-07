@@ -218,32 +218,33 @@ function App() {
   };
 
   const handleUpload = async () => {
-  if (!file) {
-    setError('Please select a file first.');
-    return;
-  }
+    if (!file) {
+      setError('Please select a file first.');
+      return;
+    }
 
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('emailColumn', selectedColumn); // Ensure emailColumn is sent
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('emailColumn', selectedColumn); // Ensure emailColumn is sent
 
-  setUploading(true);
-  setError(null);
-  setSuccess(null);
+    setUploading(true);
+    setError(null);
+    setSuccess(null);
 
-  try {
-    const response = await axios.post('http://localhost:5001/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    try {
+      // Updated URL to use the new API endpoint
+      const response = await axios.post('https://llv-backend-production.up.railway.app/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
 
-    setResults(response.data);
-    setSuccess('File uploaded successfully!');
-  } catch (err) {
-    setError('Error uploading file. Please try again.');
-  } finally {
-    setUploading(false);
-  }
-};
+      setResults(response.data);
+      setSuccess('File uploaded successfully!');
+    } catch (err) {
+      setError('Error uploading file. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleDownload = (url) => {
     if (url) {
@@ -287,145 +288,112 @@ function App() {
       <Background>
         <AppBar position="static">
           <Toolbar>
-            <IconButton edge="start" color="inherit" aria-label="menu">
+            <IconButton edge="start" color="inherit" aria-label="menu" sx={{ mr: 2 }}>
               <MenuIcon />
             </IconButton>
-            <Typography variant="h6" style={{ flexGrow: 1 }}>
+            <Typography variant="h6" sx={{ flexGrow: 1 }}>
               Email Verifier
             </Typography>
             <Switch checked={darkMode} onChange={handleToggleDarkMode} />
           </Toolbar>
         </AppBar>
+
         <Hero>
-          <Typography variant="h2" component="h1">
-            Verify Your Emails Efficiently
-          </Typography>
-          <Typography variant="h5" component="p">
-            Upload your CSV file, select the email column, and start verifying!
-          </Typography>
+          <Typography variant="h3">Welcome to the Email Verifier</Typography>
+          <Typography variant="h6">Upload your CSV file to get started</Typography>
         </Hero>
+
         <AppContainer>
           <StyledCard>
-            <Typography variant="h4" component="h2" gutterBottom>
-              Upload Your File
-            </Typography>
-            <form>
-              <FileInput
-                accept=".csv"
-                id="upload-file"
-                type="file"
-                onChange={handleFileChange}
-              />
-              <label htmlFor="upload-file">
-                <AnimatedButton
-                  variant="contained"
-                  color="primary"
-                  component="span"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
+            <Typography variant="h5">Upload Your CSV File</Typography>
+            <Box mt={2}>
+              <label htmlFor="upload-button">
+                <FileInput
+                  id="upload-button"
+                  type="file"
+                  accept=".csv"
+                  onChange={handleFileChange}
+                />
+                <Button variant="contained" color="primary" component="span">
                   Choose File
-                </AnimatedButton>
+                </Button>
               </label>
-              {file && (
-                <Typography variant="body1" component="p" style={{ marginTop: '10px' }}>
-                  Selected file: {file.name}
-                </Typography>
-              )}
-              <FormControl fullWidth style={{ marginTop: '20px' }}>
-                <InputLabel id="email-column-select-label">Select Email Column</InputLabel>
-                <Select
-                  labelId="email-column-select-label"
-                  id="email-column-select"
-                  value={selectedColumn}
-                  onChange={(e) => setSelectedColumn(e.target.value)}
-                >
-                  {columns.map((column) => (
-                    <MenuItem key={column} value={column}>
-                      {column}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              <Box mt={4}>
-                <AnimatedButton
-                  variant="contained"
-                  color="secondary"
-                  onClick={handleUpload}
-                  disabled={uploading}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  {uploading ? <CircularProgress size={24} color="inherit" /> : 'Process File'}
-                </AnimatedButton>
-              </Box>
-            </form>
+            </Box>
+            <FormControl sx={{ mt: 2, width: '100%' }}>
+              <InputLabel id="email-column-label">Email Column</InputLabel>
+              <Select
+                labelId="email-column-label"
+                id="email-column-select"
+                value={selectedColumn}
+                onChange={(e) => setSelectedColumn(e.target.value)}
+              >
+                {columns.map((column, index) => (
+                  <MenuItem key={index} value={column}>
+                    {column}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <Button
+              variant="contained"
+              color="primary"
+              sx={{ mt: 2 }}
+              onClick={handleUpload}
+              disabled={uploading}
+            >
+              {uploading ? <CircularProgress size={24} /> : 'Upload'}
+            </Button>
           </StyledCard>
+
           {results && (
-            <Box mt={6}>
-              <Typography variant="h5" component="h3" gutterBottom>
-                Verification Results
-              </Typography>
+            <StyledCard sx={{ mt: 4 }}>
+              <Typography variant="h5">Results</Typography>
               <Bar data={chartData} options={{ responsive: true }} />
-              <Box mt={4}>
-                <DownloadButton
-                  variant="contained"
-                  onClick={() => handleDownload(results.validUrl)}
-                >
+              <Box mt={2}>
+                <DownloadButton onClick={() => handleDownload(results.validDownloadUrl)}>
                   Download Valid Emails
                 </DownloadButton>
-                <DownloadButton
-                  variant="contained"
-                  onClick={() => handleDownload(results.invalidUrl)}
-                >
+                <DownloadButton onClick={() => handleDownload(results.invalidDownloadUrl)}>
                   Download Invalid Emails
                 </DownloadButton>
-                <DownloadButton
-                  variant="contained"
-                  onClick={() => handleDownload(results.catchAllUrl)}
-                >
+                <DownloadButton onClick={() => handleDownload(results.catchAllDownloadUrl)}>
                   Download Catch-All Emails
                 </DownloadButton>
               </Box>
-            </Box>
+            </StyledCard>
           )}
+
           {error && (
-            <Snackbar
-              open={Boolean(error)}
-              autoHideDuration={6000}
-              onClose={() => setError(null)}
-            >
-              <Alert onClose={() => setError(null)} severity="error" sx={{ width: '100%' }}>
+            <Snackbar open autoHideDuration={6000} onClose={() => setError(null)}>
+              <Alert onClose={() => setError(null)} severity="error">
                 {error}
               </Alert>
             </Snackbar>
           )}
+
           {success && (
-            <Snackbar
-              open={Boolean(success)}
-              autoHideDuration={6000}
-              onClose={() => setSuccess(null)}
-            >
-              <Alert onClose={() => setSuccess(null)} severity="success" sx={{ width: '100%' }}>
+            <Snackbar open autoHideDuration={6000} onClose={() => setSuccess(null)}>
+              <Alert onClose={() => setSuccess(null)} severity="success">
                 {success}
               </Alert>
             </Snackbar>
           )}
         </AppContainer>
+
         <Footer>
           <Typography variant="body2">
-            &copy; {new Date().getFullYear()} Rishesh Gangwar All rights reserved.
+            &copy; 2024 Your Company. All rights reserved.
+            <Button color="inherit" onClick={handleOpenContact}>Contact Us</Button>
           </Typography>
         </Footer>
+
         <Dialog open={contactOpen} onClose={handleCloseContact}>
           <DialogTitle>Contact Us</DialogTitle>
           <DialogContent>
-            <Typography>For any inquiries, please email us at support@yourwebsite.com</Typography>
+            <Typography variant="body1">For inquiries, please email us at contact@yourcompany.com</Typography>
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleCloseContact} color="primary">
-              Close
-            </Button>
+            <Button onClick={handleCloseContact}>Close</Button>
           </DialogActions>
         </Dialog>
       </Background>
